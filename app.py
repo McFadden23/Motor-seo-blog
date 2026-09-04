@@ -19,6 +19,9 @@ st.set_page_config(page_title="Dashboard IA - Seguro Estagiário", layout="wide"
 ENV_FILE = ".env"
 load_dotenv(ENV_FILE)
 
+# Inicializa o banco de dados (garante que a tabela posts existe na nuvem)
+modulo4.inicializar_banco()
+
 # -----------------------------------------------------
 # FUNÇÕES AUXILIARES
 # -----------------------------------------------------
