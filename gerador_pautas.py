@@ -6,19 +6,31 @@ from google import genai
 import modulo3  # Reutiliza conexão do GSC
 
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+def get_gemini_client():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
 
 def obter_top_queries_gsc(dias=30, limite=15):
     """Obtém as palavras-chave mais buscadas do site no Search Console."""
-    service = modulo3.conectar_gsc()
-    site_url = modulo3.WP_URL.split('/blog')[0] + '/'
+    try:
+        service = modulo3.conectar_gsc()
+    except Exception as e:
+        print(f"Aviso ao conectar GSC (Pautas): {e}")
+        return []
+        
+    wp_url = (os.getenv("WP_URL") or "").rstrip('/')
+    site_url = wp_url.split('/blog')[0] + '/' if wp_url else ""
     
     # Tenta descobrir o URL real
     try:
         sites = service.sites().list().execute().get('siteEntry', [])
         if sites: site_url = sites[0]['siteUrl']
     except: pass
+    
+    if not site_url:
+        return []
 
     data_fim = datetime.now().strftime('%Y-%m-%d')
     data_inicio = (datetime.now() - timedelta(days=dias)).strftime('%Y-%m-%d')
@@ -88,6 +100,11 @@ def sugerir_tema_autonomo() -> str:
     """
     
     print("Gerando pauta com IA com base no Search Console e Histórico...")
+    
+    gemini_client = get_gemini_client()
+    if not gemini_client:
+        return "Configure sua chave Gemini na aba Ajustes"
+        
     response = gemini_client.models.generate_content(
         model="gemini-3.5-flash",
         contents=prompt

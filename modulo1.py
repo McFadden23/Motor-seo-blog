@@ -6,23 +6,26 @@ from dotenv import load_dotenv
 # Carregar variáveis de ambiente
 load_dotenv()
 
-# Configurações do Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Configurações dinâmicas
+def get_gemini_client():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Chave GEMINI_API_KEY não configurada. Configure na aba Ajustes.")
+    return genai.Client(api_key=api_key)
 
-# Configurações do WordPress
-WP_USER = os.getenv("WP_USER")
-WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD")
-WP_URL = os.getenv("WP_URL").rstrip('/')
-
-# Endpoint da API REST do WordPress para criar posts
-WP_API_ENDPOINT = f"{WP_URL}/wp-json/wp/v2/posts"
+def get_wp_config():
+    wp_user = os.getenv("WP_USER")
+    wp_pass = os.getenv("WP_APP_PASSWORD")
+    wp_url = (os.getenv("WP_URL") or "").rstrip('/')
+    endpoint = f"{wp_url}/wp-json/wp/v2/posts" if wp_url else ""
+    return wp_user, wp_pass, endpoint
 
 
 from modulo2 import buscar_estrutura
 
 def gerar_texto_gemini(topico: str) -> str:
     """Gera o conteúdo do post usando a API do Gemini com prompt específico para não parecer IA."""
+    client = get_gemini_client()
     print(f"Gerando texto sobre: {topico}...")
     
     # Busca a estrutura de sucesso no Banco Vetorial
@@ -59,6 +62,11 @@ def publicar_no_wordpress(titulo: str, conteudo_html: str):
         'status': 'publish'  # Publica direto, sem rascunho
     }
 
+    wp_user, wp_pass, endpoint = get_wp_config()
+    if not endpoint or not wp_user or not wp_pass:
+        print("ERRO: Credenciais do WordPress não configuradas.")
+        return None
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         'Accept': 'application/json',
@@ -66,8 +74,8 @@ def publicar_no_wordpress(titulo: str, conteudo_html: str):
     }
 
     response = requests.post(
-        WP_API_ENDPOINT,
-        auth=(WP_USER, WP_APP_PASSWORD),
+        endpoint,
+        auth=(wp_user, wp_pass),
         headers=headers,
         json=data
     )
@@ -86,7 +94,12 @@ def atualizar_no_wordpress(post_id: int, novo_conteudo: str) -> bool:
     """Atualiza (reescreve) um post existente no WordPress via REST API."""
     print(f"Atualizando o post ID {post_id} no WordPress...")
     
-    url = f"{WP_API_ENDPOINT}/{post_id}"
+    wp_user, wp_pass, endpoint = get_wp_config()
+    if not endpoint or not wp_user or not wp_pass:
+        print("ERRO: Credenciais do WordPress não configuradas.")
+        return False
+        
+    url = f"{endpoint}/{post_id}"
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',

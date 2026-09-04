@@ -7,8 +7,8 @@ from googleapiclient.discovery import build
 load_dotenv()
 
 # Configuracoes do Google Search Console
-GSC_CREDENTIALS_JSON = os.getenv("GSC_CREDENTIALS_JSON")
-WP_URL = os.getenv("WP_URL").rstrip('/')
+GSC_CREDENTIALS_JSON = os.getenv("GSC_CREDENTIALS_JSON", "")
+WP_URL = (os.getenv("WP_URL") or "").rstrip('/')
 
 # Escopo necessario para leitura do Search Console
 SCOPES = ['https://www.googleapis.com/auth/webmasters.readonly']
@@ -16,8 +16,11 @@ SCOPES = ['https://www.googleapis.com/auth/webmasters.readonly']
 
 def conectar_gsc():
     """Cria e retorna o cliente autenticado do Google Search Console."""
+    gsc_json = os.getenv("GSC_CREDENTIALS_JSON") or GSC_CREDENTIALS_JSON
+    if not gsc_json or not os.path.exists(gsc_json):
+        raise FileNotFoundError("Arquivo de credenciais do Search Console (.json) não configurado ou não encontrado. Faça o upload na aba Ajustes.")
     credentials = service_account.Credentials.from_service_account_file(
-        GSC_CREDENTIALS_JSON,
+        gsc_json,
         scopes=SCOPES
     )
     service = build('searchconsole', 'v1', credentials=credentials)

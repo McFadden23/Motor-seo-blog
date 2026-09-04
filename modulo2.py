@@ -5,18 +5,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Inicializa cliente Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+# Funções seguras para cliente Gemini e ChromaDB
+def get_gemini_client():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
 
-# Configura o ChromaDB na pasta local
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
-collection = chroma_client.get_or_create_collection(name="padroes_sucesso")
+def get_chroma_collection():
+    chroma_client = chromadb.PersistentClient(path="./chroma_db")
+    return chroma_client.get_or_create_collection(name="padroes_sucesso")
 
 def extrair_estrutura(texto_sucesso: str) -> str:
     """Usa o Gemini para analisar um texto e extrair sua 'fórmula'."""
     print("Extraindo estrutura do texto via Gemini...")
     
+    gemini_client = get_gemini_client()
+    if not gemini_client:
+        print("Aviso: GEMINI_API_KEY não configurada.")
+        return ""
+        
     prompt = f"""
     Analise o texto abaixo e extraia a ESTRUTURA e o TOM DE VOZ usados.
     Eu não quero o conteúdo, quero a "fórmula" deste texto.
@@ -38,6 +46,7 @@ def salvar_padrao(topico: str, texto_sucesso: str, id_post: str):
     """Extrai a estrutura e a salva no banco vetorial."""
     estrutura = extrair_estrutura(texto_sucesso)
     
+    collection = get_chroma_collection()
     collection.add(
         documents=[estrutura],
         metadatas=[{"topico": topico}],
@@ -47,6 +56,7 @@ def salvar_padrao(topico: str, texto_sucesso: str, id_post: str):
 
 def buscar_estrutura(topico_novo: str) -> str:
     """Busca a estrutura mais semelhante no banco para guiar um novo texto."""
+    collection = get_chroma_collection()
     if collection.count() == 0:
         return "Estrutura padrão: Tom amigável, parágrafos curtos, focado na prática e sem jargões de IA."
         
