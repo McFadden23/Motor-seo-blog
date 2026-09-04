@@ -187,15 +187,25 @@ with tab4:
             json_file = st.file_uploader("Arquivo .json do Google Search Console", type=['json'])
             
             if st.form_submit_button("Salvar Configurações"):
+                if not os.path.exists(ENV_FILE):
+                    open(ENV_FILE, 'a').close()
+                    
                 set_key(ENV_FILE, "WP_URL", wp_url)
                 set_key(ENV_FILE, "WP_USER", wp_user)
                 set_key(ENV_FILE, "WP_APP_PASSWORD", wp_pass)
                 set_key(ENV_FILE, "GEMINI_API_KEY", gemini_key)
+                
+                # Aplica IMEDIATAMENTE no ambiente do servidor
+                os.environ["WP_URL"] = wp_url
+                os.environ["WP_USER"] = wp_user
+                os.environ["WP_APP_PASSWORD"] = wp_pass
+                os.environ["GEMINI_API_KEY"] = gemini_key
                 
                 if json_file is not None:
                     nome_arquivo = json_file.name
                     with open(nome_arquivo, "wb") as f:
                         f.write(json_file.getbuffer())
                     set_key(ENV_FILE, "GSC_CREDENTIALS_JSON", nome_arquivo)
+                    os.environ["GSC_CREDENTIALS_JSON"] = nome_arquivo
                     
-                st.success("Configurações salvas no arquivo oculto `.env`! Reinicie a página para aplicar.")
+                st.success("Configurações salvas e ativadas! Você já pode usar o gerador.")
