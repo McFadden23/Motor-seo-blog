@@ -1,0 +1,31 @@
+# Ambientes virtuais
+venv/
+.venv/
+env/
+ENV/
+
+# Arquivos de credenciais e chaves secretas (NUNCA SUBIR PARA O GITHUB)
+.env
+*.json
+!credentials.example.json
+
+# Bancos de dados e memória de embeddings locais
+*.db
+agendamentos.db
+chroma_db/
+
+# Python cache e compilação
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Configurações locais de IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
