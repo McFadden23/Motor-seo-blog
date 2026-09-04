@@ -77,10 +77,13 @@ def sugerir_tema_autonomo() -> str:
     str_historico = "\n".join(f"- {t}" for t in historico) if historico else "Nenhum histórico."
     str_queries = "\n".join(f"- {q}" for q in top_queries) if top_queries else "Sem dados do GSC."
     
+    ano_atual = datetime.now().year
+    
     prompt = f"""
     Você é um especialista em SEO e Estrategista de Conteúdo.
     Seu cliente é um blog brasileiro focado estritamente no nicho de "Seguro Estagiário".
     Sua missão é escolher o ÚNICO melhor tema para o post de hoje.
+    O ano atual é {ano_atual}. Use-o para manter o tema fresco e atualizado.
     
     CONTEXTO DO MERCADO (GEO/Dúvidas):
     - Lei do Estágio 11.788 obriga o seguro.
@@ -96,7 +99,8 @@ def sugerir_tema_autonomo() -> str:
     REGRAS DA SUA RESPOSTA:
     1. Retorne APENAS UMA FRASE contendo o título/tópico perfeito e focado.
     2. Não explique a estratégia, não dê opções. Apenas o tópico final.
-    3. Exemplo de bom formato: "Seguro de vida para estagiário em São Paulo: Regras e Preços em 2024"
+    3. Exemplo de bom formato: "Seguro de vida para estagiário em São Paulo: Regras e Preços em {ano_atual}"
+    4. NUNCA mencione anos passados como se fossem o ano atual.
     """
     
     print("Gerando pauta com IA com base no Search Console e Histórico...")

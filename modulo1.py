@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime
 from google import genai
 from dotenv import load_dotenv
 
@@ -31,9 +32,13 @@ def gerar_texto_gemini(topico: str) -> str:
     # Busca a estrutura de sucesso no Banco Vetorial
     estrutura_ideal = buscar_estrutura(topico)
 
+    ano_atual = datetime.now().year
+
     prompt = f"""
     Escreva um artigo de blog completo e otimizado para SEO sobre o tópico: '{topico}'.
     O nicho do blog é focado estritamente em Seguros para Estagiários no Brasil.
+    O ano atual é {ano_atual}. Use sempre informações, regras e leis atualizadas para o ano vigente.
+    NUNCA mencione anos passados como se fossem o presente.
     
     AQUI ESTÁ A "FÓRMULA SECRETA" (ESTRUTURA E TOM DE VOZ) QUE VOCÊ DEVE SEGUIR:
     {estrutura_ideal}
