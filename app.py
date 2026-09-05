@@ -79,6 +79,12 @@ def obter_posts_wordpress():
     wp_pass = os.getenv("WP_APP_PASSWORD")
 
     if not wp_url or not wp_user or not wp_pass:
+        st.warning(
+            f"⚠️ Credenciais do WordPress ausentes nos Secrets. "
+            f"WP_URL={'✅' if wp_url else '❌ vazio'} | "
+            f"WP_USER={'✅' if wp_user else '❌ vazio'} | "
+            f"WP_APP_PASSWORD={'✅' if wp_pass else '❌ vazio'}"
+        )
         return pd.DataFrame()
 
     try:
