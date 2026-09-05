@@ -90,9 +90,14 @@ def obter_posts_wordpress():
     try:
         import requests
         endpoint = f"{wp_url}/wp-json/wp/v2/posts"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
         resp = requests.get(
             endpoint,
             auth=(wp_user, wp_pass),
+            headers=headers,
             params={"per_page": 50, "orderby": "date", "order": "desc"},
             timeout=10
         )
