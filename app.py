@@ -108,8 +108,15 @@ def obter_posts_wordpress():
                     "URL": p.get("link", ""),
                 })
             return pd.DataFrame(dados)
+        else:
+            # Mostra o erro exato da API do WordPress para diagnóstico
+            st.warning(
+                f"⚠️ A API do WordPress retornou erro **{resp.status_code}**.\n\n"
+                f"URL consultada: `{endpoint}`\n\n"
+                f"Resposta: `{resp.text[:300]}`"
+            )
     except Exception as e:
-        st.warning(f"Não foi possível carregar posts do WordPress: {e}")
+        st.warning(f"Não foi possível conectar ao WordPress: {e}")
     return pd.DataFrame()
 
 def gerar_grafico_vazio(mensagem="Sem dados suficientes"):
