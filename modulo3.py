@@ -22,15 +22,21 @@ def conectar_gsc():
     1. GSC_CREDENTIALS_JSON_CONTENT: conteúdo JSON como string ou dict (Streamlit Cloud / GitHub Actions)
     2. GSC_CREDENTIALS_JSON: caminho para o arquivo .json (uso local)
     """
+    import ast
+
     # Opção 1 (Nuvem): lê o conteúdo das credenciais direto da variável de ambiente
     gsc_json_content = os.getenv("GSC_CREDENTIALS_JSON_CONTENT")
     if gsc_json_content:
         try:
-            # Pode vir como string JSON ou já como dict (via st.secrets)
+            # Tenta JSON padrão primeiro
             if isinstance(gsc_json_content, str):
-                info = json.loads(gsc_json_content)
+                try:
+                    info = json.loads(gsc_json_content)
+                except json.JSONDecodeError:
+                    # Fallback: interpreta repr Python {'chave': 'valor'} com aspas simples
+                    info = ast.literal_eval(gsc_json_content)
             else:
-                info = gsc_json_content
+                info = dict(gsc_json_content)
             credentials = service_account.Credentials.from_service_account_info(
                 info, scopes=SCOPES
             )

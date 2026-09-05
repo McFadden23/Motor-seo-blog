@@ -41,14 +41,17 @@ def injetar_streamlit_secrets():
             if secret_key in secrets and not os.getenv(env_key):
                 os.environ[env_key] = secrets[secret_key]
 
-        # JSON do GSC: vem como dict (tabela TOML) ou string — converte para JSON string
+        # JSON do GSC: vem como AttrDict/dict (tabela TOML) ou string
         if "GSC_CREDENTIALS_JSON_CONTENT" in secrets and not os.getenv("GSC_CREDENTIALS_JSON_CONTENT"):
             conteudo = secrets["GSC_CREDENTIALS_JSON_CONTENT"]
-            if isinstance(conteudo, dict):
-                # Formato tabela TOML [GSC_CREDENTIALS_JSON_CONTENT] → serializa para JSON string
-                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = json.dumps(dict(conteudo))
-            else:
-                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = str(conteudo)
+            try:
+                # Serializa para JSON de forma segura, convertendo o AttrDict recursivamente
+                conteudo_dict = json.loads(json.dumps(dict(conteudo)))
+                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = json.dumps(conteudo_dict)
+            except Exception:
+                # Fallback: converte item por item manualmente
+                conteudo_plain = {str(k): str(v) for k, v in conteudo.items()}
+                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = json.dumps(conteudo_plain)
     except Exception:
         # Fora da nuvem (rodando local), os secrets não existem — usa o .env normalmente
         pass
