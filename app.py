@@ -5,7 +5,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import os
 import json
-import tempfile
+import shutil
 from dotenv import load_dotenv, set_key
 
 # Importações dos nossos módulos do robô
@@ -23,9 +23,14 @@ st.set_page_config(page_title="Dashboard IA - Seguro Estagiário", layout="wide"
 # e injeta em os.environ ANTES de qualquer outro módulo usar.
 # -------------------------------------------------------
 def injetar_streamlit_secrets():
-    """Lê os Streamlit Secrets e injeta no os.environ, incluindo o JSON do GSC."""
+    """Lê os Streamlit Secrets e injeta no os.environ.
+    
+    Funciona para todas as variáveis simples e também para o JSON do GSC,
+    que pode estar armazenado como tabela TOML [GSC_CREDENTIALS_JSON_CONTENT].
+    """
     try:
         secrets = st.secrets
+        # Variáveis simples de texto
         mapeamento = {
             "GEMINI_API_KEY": "GEMINI_API_KEY",
             "WP_URL": "WP_URL",
@@ -36,17 +41,14 @@ def injetar_streamlit_secrets():
             if secret_key in secrets and not os.getenv(env_key):
                 os.environ[env_key] = secrets[secret_key]
 
-        # Para o JSON do GSC: o conteúdo do JSON é armazenado como texto no secret
-        # Escrevemos em um arquivo temporário e apontamos a variável para ele
-        if "GSC_CREDENTIALS_JSON_CONTENT" in secrets and not os.getenv("GSC_CREDENTIALS_JSON"):
-            conteudo_json = secrets["GSC_CREDENTIALS_JSON_CONTENT"]
-            # Garante que é string (pode vir como dict do toml)
-            if isinstance(conteudo_json, dict):
-                conteudo_json = json.dumps(conteudo_json)
-            tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
-            tmp.write(conteudo_json)
-            tmp.flush()
-            os.environ["GSC_CREDENTIALS_JSON"] = tmp.name
+        # JSON do GSC: vem como dict (tabela TOML) ou string — converte para JSON string
+        if "GSC_CREDENTIALS_JSON_CONTENT" in secrets and not os.getenv("GSC_CREDENTIALS_JSON_CONTENT"):
+            conteudo = secrets["GSC_CREDENTIALS_JSON_CONTENT"]
+            if isinstance(conteudo, dict):
+                # Formato tabela TOML [GSC_CREDENTIALS_JSON_CONTENT] → serializa para JSON string
+                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = json.dumps(dict(conteudo))
+            else:
+                os.environ["GSC_CREDENTIALS_JSON_CONTENT"] = str(conteudo)
     except Exception:
         # Fora da nuvem (rodando local), os secrets não existem — usa o .env normalmente
         pass

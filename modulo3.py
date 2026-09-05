@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from google.oauth2 import service_account
@@ -15,13 +16,35 @@ SCOPES = ['https://www.googleapis.com/auth/webmasters.readonly']
 
 
 def conectar_gsc():
-    """Cria e retorna o cliente autenticado do Google Search Console."""
+    """Cria e retorna o cliente autenticado do Google Search Console.
+    
+    Suporta duas formas de credenciais:
+    1. GSC_CREDENTIALS_JSON_CONTENT: conteúdo JSON como string ou dict (Streamlit Cloud / GitHub Actions)
+    2. GSC_CREDENTIALS_JSON: caminho para o arquivo .json (uso local)
+    """
+    # Opção 1 (Nuvem): lê o conteúdo das credenciais direto da variável de ambiente
+    gsc_json_content = os.getenv("GSC_CREDENTIALS_JSON_CONTENT")
+    if gsc_json_content:
+        try:
+            # Pode vir como string JSON ou já como dict (via st.secrets)
+            if isinstance(gsc_json_content, str):
+                info = json.loads(gsc_json_content)
+            else:
+                info = gsc_json_content
+            credentials = service_account.Credentials.from_service_account_info(
+                info, scopes=SCOPES
+            )
+            service = build('searchconsole', 'v1', credentials=credentials)
+            return service
+        except Exception as e:
+            raise ValueError(f"Erro ao carregar credenciais do GSC_CREDENTIALS_JSON_CONTENT: {e}")
+
+    # Opção 2 (Local): lê o caminho do arquivo .json
     gsc_json = os.getenv("GSC_CREDENTIALS_JSON") or GSC_CREDENTIALS_JSON
     if not gsc_json or not os.path.exists(gsc_json):
-        raise FileNotFoundError("Arquivo de credenciais do Search Console (.json) não configurado ou não encontrado. Faça o upload na aba Ajustes.")
+        raise FileNotFoundError("Credenciais do Search Console não encontradas. Configure GSC_CREDENTIALS_JSON_CONTENT nos Secrets do Streamlit Cloud ou faça upload do .json na Aba de Ajustes.")
     credentials = service_account.Credentials.from_service_account_file(
-        gsc_json,
-        scopes=SCOPES
+        gsc_json, scopes=SCOPES
     )
     service = build('searchconsole', 'v1', credentials=credentials)
     return service
